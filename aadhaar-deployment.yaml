@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aadhaar-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aadhaar-app
+  template:
+    metadata:
+      labels:
+        app: aadhaar-app
+    spec:
+      containers:
+      - name: aadhaar-app
+        image: aadhaaracr.azurecr.io/aadhaar-app:v1
+        ports:
+        - containerPort: 3000
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: db-config
+              key: DB_HOST
+
