@@ -1,4 +1,4 @@
-name: CI - Docker Build
+name: CI - Build & Push to ACR
 
 on:
   push:
@@ -6,16 +6,26 @@ on:
       - main
 
 jobs:
-  docker-build:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login to ACR
+        run: |
+          az acr login --name aadhaaracr
 
       - name: Build Docker image
         run: |
-          docker build -t aadhaar-app:ci .
+          docker build -t aadhaaracr.azurecr.io/aadhaar-app:${{ github.sha }} .
+
+      - name: Push Docker image
+        run: |
+          docker push aadhaaracr.azurecr.io/aadhaar-app:${{ github.sha }}
