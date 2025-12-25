@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: aadhaar-app
-        image: aadhaaracr.azurecr.io/aadhaar-app:5465ef59290bc398aa8be922121849be0b57ff19
+        image: aadhaaracr.azurecr.io/aadhaar-app:530dd355527b57fb3442f7a6e397a4ccda6daaa9
         ports:
         - containerPort: 3000
         env:
