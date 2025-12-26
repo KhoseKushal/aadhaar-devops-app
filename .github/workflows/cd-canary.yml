@@ -4,15 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag to deploy as canary"
-        required: true
+        description: "Image tag (commit SHA). Leave empty to deploy latest from ACR"
+        required: false
 
 jobs:
   deploy-canary:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repo
+    - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Azure Login
@@ -27,8 +27,30 @@ jobs:
           --name aadhaar-aks \
           --overwrite-existing
 
-    - name: Deploy Canary
+    - name: Resolve image tag
+      id: resolve_tag
       run: |
-        sed -i "s/08f068304873610fbbd980bb1334527f082b2985/${{ github.event.inputs.image_tag }}/g" aadhaar-app-canary.yaml
+        if [ -z "${{ github.event.inputs.image_tag }}" ]; then
+          echo "No image tag provided. Fetching latest from ACR..."
+          TAG=$(az acr repository show-tags \
+            --name aadhaaracr \
+            --repository aadhaar-app \
+            --orderby time_desc \
+            --top 1 \
+            --output tsv)
+        else
+          TAG="${{ github.event.inputs.image_tag }}"
+        fi
+
+        echo "Using image tag: $TAG"
+        echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+
+    - name: Deploy Canary to AKS
+      run: |
+        sed -i "s|image: .*aadhaar-app:.*|image: aadhaaracr.azurecr.io/aadhaar-app:${IMAGE_TAG}|" aadhaar-app-canary.yaml
         kubectl apply -f aadhaar-app-canary.yaml
+
+    - name: Verify Canary Pods
+      run: |
+        kubectl get pods -l version=canary
 
