@@ -22,7 +22,7 @@ db.connect(err => {
 
 app.get('/', (req, res) => {
   res.send(`
-    <h2>Aadhaar Registration</h2>
+    <h2>Aadhaar Registration-CANARY</h2>
     <form method="POST" action="/submit">
       Name: <input name="name" required /><br/><br/>
       Aadhaar Number: <input name="aadhaar" required /><br/><br/>
