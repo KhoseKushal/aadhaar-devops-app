@@ -1,0 +1,34 @@
+name: CD - Deploy Canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy as canary"
+        required: true
+
+jobs:
+  deploy-canary:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Set AKS context
+      run: |
+        az aks get-credentials \
+          --resource-group devops-rg \
+          --name aadhaar-aks \
+          --overwrite-existing
+
+    - name: Deploy Canary
+      run: |
+        sed -i "s/08f068304873610fbbd980bb1334527f082b2985/${{ github.event.inputs.image_tag }}/g" aadhaar-app-canary.yaml
+        kubectl apply -f aadhaar-app-canary.yaml
+
