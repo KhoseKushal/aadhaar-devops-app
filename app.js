@@ -5,27 +5,30 @@ const mysql = require('mysql2');
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const db = mysql.createConnection({
-  host: process.env.DB_HOST || 'localhost',
+// ✅ ENV IDENTIFIER (canary / stable)
+const ENV = process.env.APP_ENV || 'stable';
+/**
+ * ✅ Use MySQL CONNECTION POOL
+ * ✅ Use MySQL SERVICE name (not localhost)
+ */
+const pool = mysql.createPool({
+  host: process.env.DB_HOST || 'mysql-service',
   user: 'root',
   password: 'root123',
-  database: 'aadhaar_db'
+  database: 'aadhaar_db',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-db.connect(err => {
-  if (err) {
-    console.error('DB connection failed:', err);
-    return;
-  }
-  console.log('Connected to MySQL');
-});
+console.log('MySQL pool created');
 
 app.get('/', (req, res) => {
   res.send(`
-    <h2>Aadhaar Registration-CANARY</h2>
+    <h2>Aadhaar Registration - ${ENV.toUpperCase()}</h2>
     <form method="POST" action="/submit">
       Name: <input name="name" required /><br/><br/>
-      Aadhaar Number: <input name="aadhaar" required /><br/><br/>
+      Aadhaar: <input name="aadhaar" required /><br/><br/>
       DOB: <input type="date" name="dob" required /><br/><br/>
       <button type="submit">Submit</button>
     </form>
@@ -38,11 +41,10 @@ app.post('/submit', (req, res) => {
   const query =
     'INSERT INTO user_details (name, aadhaar_number, dob) VALUES (?, ?, ?)';
 
-  db.query(query, [name, aadhaar, dob], (err) => {
+  pool.query(query, [name, aadhaar, dob], (err) => {
     if (err) {
-      console.error(err);
-      res.send('Error saving data');
-      return;
+      console.error('Insert failed:', err);
+      return res.status(500).send('Error saving data');
     }
     res.send('Data saved successfully');
   });
@@ -51,3 +53,4 @@ app.post('/submit', (req, res) => {
 app.listen(3000, () => {
   console.log('App running on port 3000');
 });
+

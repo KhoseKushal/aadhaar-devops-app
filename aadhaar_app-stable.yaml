@@ -20,6 +20,8 @@ spec:
         ports:
         - containerPort: 3000
         env:
+        - name: APP_ENV
+          value: "stable" 
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:

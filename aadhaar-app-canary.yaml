@@ -20,6 +20,8 @@ spec:
         ports:
         - containerPort: 3000
         env:
+        - name: APP_ENV
+          value: "canary"  
         - name: DB_HOST
           valueFrom:
             configMapKeyRef:
